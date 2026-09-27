@@ -1,10 +1,8 @@
 # SoundDial
 
-![SoundDial](media/SoundDial_Hero_Dark.png)
-
 SoundDial is a desktop volume controller built around an ESP32-C3 SuperMini, a rotary encoder, a 1.3-inch OLED and four WS2812 LEDs. It controls individual Windows applications and audio endpoints through USB or Wi-Fi, and includes a separate Media mode for playback and linked volume targets.
 
-The repository contains the complete firmware source, Windows companion-app source, editable STEP models and multilingual documentation. Ready-to-use Windows and ESP32 binaries are provided on the **Releases** page.
+This repository contains the complete ESP32 firmware source. Ready-to-use Windows and ESP32 binaries plus the multilingual PDF manuals are provided on the [Releases](https://github.com/Simracingshark/SoundDial/releases) page. The printable model and build presentation are available on [MakerWorld](https://makerworld.com/en/models/3362242-sounddial-esp32-smart-pc-volume-knob).
 
 ## Main features
 
@@ -46,6 +44,9 @@ The repository contains the complete firmware source, Windows companion-app sour
 - 1.3-inch 128×64 I2C OLED, address `0x3C` (SSD1306 tested)
 - HW-040 / KY-040 rotary encoder module with push switch
 - 4× WS2812 addressable RGB LEDs
+- LX-LCBST 1S Li-ion/LiPo charger and adjustable boost-converter module, set to 5.0 V output
+- Small 1S 3.7 V Li-ion/LiPo battery sized to fit the enclosure
+- 7×7 mm latching pushbutton switch used as the main power switch in the boosted 5 V line
 - USB data cable
 - Common 5 V and GND distribution
 - M3 fasteners
@@ -67,17 +68,20 @@ The repository contains the complete firmware source, Windows companion-app sour
 
 All modules must share GND. ESP32 signal pins use 3.3 V logic; never feed 5 V into a GPIO.
 
+### Battery power path
+
+Connect the 1S battery to the LX-LCBST battery pads, adjust the module output to exactly 5.0 V **before** connecting the electronics, and route the boosted 5 V output through the 7×7 mm latching switch to the device's 5 V rail. The LX-LCBST USB-C connector is used to charge the battery. Observe battery polarity and verify the labels on your particular module because inexpensive board revisions and clones may differ.
+
 The photographed prototype connects GPIO10 directly to the first LED. A 220–470 Ω data resistor and a 470–1000 µF capacitor across the LED supply are optional reliability improvements, but they are not installed in the shown build.
 
 ## Repository layout
 
 - `firmware/` — PlatformIO project for the ESP32-C3
-- `windows-app/` — .NET Windows companion application
-- `hardware/` — five editable STEP parts and the full assembly
-- `docs/` — user manuals and technical overviews
-- `media/` — project image used by this README
+- `README.md` — project overview, wiring, setup and controls
+- `LICENSE-CODE.md` — firmware and application code license
+- `LICENSE-HARDWARE.md` — hardware, documentation and media license
 
-The local `release-assets/` directory is intentionally excluded from Git. Its files are uploaded to GitHub Releases instead.
+Release packages, manuals and ready-to-flash images are uploaded to GitHub Releases instead of being duplicated in the source branch. Printable files are distributed through MakerWorld.
 
 ## Firmware build and upload
 
@@ -91,18 +95,27 @@ Use `hardware-test` for the display, encoder and LED hardware test build.
 
 The default display controller is SSD1306. For a compatible SH1106 module, replace the SSD1306 build flag with `OLED_CONTROLLER_SH1106=1`.
 
-## Windows app build
+## Windows app
 
-The application targets Windows and .NET 10.
-
-```powershell
-dotnet restore windows-app/AudioPuck.PC.csproj
-dotnet publish windows-app/AudioPuck.PC.csproj -c Release -r win-x64 --self-contained true
-```
+The companion application targets Windows and is distributed as a self-contained .NET 10 build.
 
 For normal use, download the self-contained application archive from the Releases page, extract it to a permanent folder and run `SoundDial.exe`. Copy `config.example.toml` to `config.toml` before making personal changes.
 
 Application names in the configuration are written without `.exe`, for example `spotify`, `firefox` or `chrome`. Colors may be names or HEX values such as `#1DB954`.
+
+### Windows download and security notice
+
+`SoundDial.exe` is a self-contained .NET application and is currently **not digitally signed with a trusted code-signing certificate**. Windows SmartScreen or some antivirus services may therefore show an “unknown publisher” warning or a false-positive detection. The official binaries are distributed only through this repository's Releases page; do not download them from third-party mirrors.
+
+SHA-256 checksums for the v1.0.0 release files:
+
+```text
+5FBA721ABC0FC930F522622AB8BCD34BC917F43CCBA6B4661D7BF4E3F5B57367  SoundDial_Windows_App.zip
+DF3F84C4D72C264674A6FDD67A12A32902ED67A08541A2ED2A26E6CEA02B7095  SoundDial-ESP32C3-merged.bin
+19673D32327A43BD9D68C0FCD3BD46B2D33E42F1BC49E7053AF95F82707BE695  SoundDial-ESP32C3-OTA.bin
+```
+
+To verify a downloaded file in PowerShell, run `Get-FileHash .\filename -Algorithm SHA256` and compare the result with the matching value above. A checksum confirms that the file matches the published release; it is not a substitute for a trusted digital signature.
 
 ## Wi-Fi setup
 
@@ -117,7 +130,7 @@ USB can remain connected while Wi-Fi is enabled. The Windows app can use automat
 - Technical Overview: Ukrainian + English
 - Technical Overview: Ukrainian + English + Russian
 
-The Ukrainian + English PDFs are stored in `docs`. The larger three-language editions are attached to the GitHub Release together with the ready-to-use software and firmware. All editions include first setup, configuration, autostart, controls, troubleshooting, wiring and printing notes.
+All PDF editions are attached to the GitHub Release together with the ready-to-use software and firmware. They include first setup, configuration, autostart, controls, troubleshooting, wiring and printing notes.
 
 ## Credits
 
