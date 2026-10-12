@@ -11,6 +11,11 @@
 bin/
 obj/
 publish/
+publish-final/
+.nuget-offline/
+.dotnet-home/
+.nuget-http/
+.nuget-plugins/
 *.user
 *.suo
 
@@ -20,6 +25,8 @@ config.toml
 
 # Release binaries belong in GitHub Releases
 release-assets/
+TEST_CURRENT/
+work/
 
 # OS/editor files
 .DS_Store
