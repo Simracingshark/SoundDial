@@ -29,6 +29,7 @@ static const uint8_t kFont[] PROGMEM = {
 0x00,0x00,0x7f,0x00,0x00,0x00,0x41,0x36,0x08,0x00,0x10,0x08,0x08,0x10,0x08
 };
 
+
 bool PuckDisplay::begin() {
   Wire.begin(Hardware::PIN_OLED_SDA, Hardware::PIN_OLED_SCL);
   Wire.setClock(400000);
@@ -87,9 +88,12 @@ void PuckDisplay::sleep(bool enabled) { command(enabled ? 0xAE : 0xAF); }
 void PuckDisplay::invert(bool enabled) { command(enabled ? 0xA7 : 0xA6); }
 
 void PuckDisplay::pixel(int16_t x, int16_t y, bool on) {
-  // The visible matrix in this module sits slightly to the right of the
-  // controller's logical origin. Shift the complete UI by two pixels.
+  // SSD1306 modules used during early development needed a two-pixel visual
+  // inset. SH1106 has two hidden RAM columns of its own; show() already starts
+  // at column 2 there, so applying this shift again would crop the right edge.
+#if defined(OLED_CONTROLLER_SSD1306)
   x += 2;
+#endif
   if (x < 0 || y < 0 || x >= 128 || y >= 64) return;
   uint8_t& value = buffer_[x + (y / 8) * 128];
   const uint8_t mask = 1u << (y & 7);
@@ -118,7 +122,7 @@ void PuckDisplay::character(int16_t x, int16_t y, char value, uint8_t scale) {
 
 void PuckDisplay::text(int16_t x, int16_t y, const String& value, uint8_t scale) { for (char ch : value) { character(x,y,ch,scale); x += 6*scale; } }
 int16_t PuckDisplay::textWidth(const String& value, uint8_t scale) const { return value.length() ? value.length()*6*scale- scale : 0; }
-void PuckDisplay::centered(int16_t y, const String& value, uint8_t scale) { text(max(0,(126-textWidth(value,scale))/2),y,value,scale); }
+void PuckDisplay::centered(int16_t y, const String& value, uint8_t scale) { text(max(0,(128-textWidth(value,scale))/2),y,value,scale); }
 
 void PuckDisplay::characterMedium(int16_t x, int16_t y, char value) {
   if (value < 32 || value > 126) value = '?';
@@ -161,7 +165,127 @@ int16_t PuckDisplay::textWidthMedium(const String& value) const {
 }
 
 void PuckDisplay::centeredMedium(int16_t y, const String& value) {
-  textMedium(max(0, (126 - textWidthMedium(value)) / 2), y, value);
+  textMedium(max(0, (128 - textWidthMedium(value)) / 2), y, value);
+}
+
+// 7x14 font used by menus. It sits exactly between the compact 5x14 status
+// font and the wide 8x14 content font, so settings remain readable without
+// forcing almost every label to scroll.
+void PuckDisplay::characterMenu(int16_t x, int16_t y, char value) {
+  if (value < 32 || value > 126) value = '?';
+  const uint16_t offset = static_cast<uint16_t>(value - 32) * 5;
+  uint8_t columns[5];
+  for (uint8_t column = 0; column < 5; ++column)
+    columns[column] = pgm_read_byte(kFont + offset + column);
+  for (uint8_t row = 0; row < 7; ++row) {
+    const uint8_t bit = 1U << row;
+    const bool expanded[7] = {
+      static_cast<bool>(columns[0] & bit),
+      static_cast<bool>(columns[1] & bit),
+      static_cast<bool>((columns[1] | columns[2]) & bit),
+      static_cast<bool>(columns[2] & bit),
+      static_cast<bool>((columns[2] | columns[3]) & bit),
+      static_cast<bool>(columns[3] & bit),
+      static_cast<bool>(columns[4] & bit)
+    };
+    for (uint8_t dx = 0; dx < 7; ++dx) {
+      if (!expanded[dx]) continue;
+      pixel(x + dx, y + row * 2);
+      pixel(x + dx, y + row * 2 + 1);
+    }
+  }
+}
+
+void PuckDisplay::textMenu(int16_t x, int16_t y, const String& value) {
+  for (char ch : value) { characterMenu(x, y, ch); x += 8; }
+}
+
+int16_t PuckDisplay::textWidthMenu(const String& value) const {
+  return value.length() ? static_cast<int16_t>(value.length() * 8 - 1) : 0;
+}
+
+void PuckDisplay::centeredMenu(int16_t y, const String& value) {
+  textMenu(max(0, (128 - textWidthMenu(value)) / 2), y, value);
+}
+
+void PuckDisplay::characterCondensed(int16_t x, int16_t y, char value) {
+  if (value < 32 || value > 126) value = '?';
+  const uint16_t offset = static_cast<uint16_t>(value - 32) * 5;
+  for (uint8_t column = 0; column < 5; ++column) {
+    const uint8_t bits = pgm_read_byte(kFont + offset + column);
+    for (uint8_t row = 0; row < 7; ++row) {
+      if (!(bits & (1U << row))) continue;
+      pixel(x + column, y + row * 2);
+      pixel(x + column, y + row * 2 + 1);
+    }
+  }
+}
+
+void PuckDisplay::textCondensed(int16_t x, int16_t y,const String& value) {
+  for (char ch : value) {
+    characterCondensed(x, y, ch);
+    x += 6;
+  }
+}
+
+int16_t PuckDisplay::textWidthCondensed(const String& value) const {
+  return value.length() ? static_cast<int16_t>(value.length() * 6 - 1) : 0;
+}
+
+// Readable 7x10 status font derived directly from the proven column-major 5x7
+// glyphs. It is one pixel wider than the previous revision but has exactly
+// the same height. An eighth pixel remains blank between characters.
+void PuckDisplay::characterStatus(int16_t x,int16_t y,char value) {
+  if(value<32||value>126)value='?';
+  const uint16_t offset=static_cast<uint16_t>(value-32)*5;
+  static constexpr uint8_t columnX[5]={0,1,3,4,5};
+  static constexpr uint8_t rowY[7]={0,2,3,4,6,7,8};
+  static constexpr uint8_t rowHeight[7]={2,1,1,2,1,1,2};
+  for(uint8_t column=0;column<5;++column){
+    const uint8_t bits=pgm_read_byte(kFont+offset+column);
+    for(uint8_t sourceRow=0;sourceRow<7;++sourceRow){
+      if(!(bits&(1U<<sourceRow)))continue;
+      for(uint8_t dy=0;dy<rowHeight[sourceRow];++dy){
+        pixel(x+columnX[column],y+rowY[sourceRow]+dy);
+        pixel(x+columnX[column]+1,y+rowY[sourceRow]+dy);
+      }
+    }
+  }
+}
+
+void PuckDisplay::textStatus(int16_t x,int16_t y,const String& value) {
+  for(char ch:value){characterStatus(x,y,ch);x+=8;}
+}
+
+int16_t PuckDisplay::textWidthStatus(const String& value) const {
+  return value.length()?static_cast<int16_t>(value.length()*8-1):0;
+}
+
+// The right-hand value keeps the earlier 6x10 metrics so four-character
+// values such as MUTE, 100% and 9:59 still fit without touching the gauges.
+void PuckDisplay::characterStatusCompact(int16_t x,int16_t y,char value) {
+  if(value<32||value>126)value='?';
+  const uint16_t offset=static_cast<uint16_t>(value-32)*5;
+  static constexpr uint8_t rowY[7]={0,2,3,4,6,7,8};
+  static constexpr uint8_t rowHeight[7]={2,1,1,2,1,1,2};
+  for(uint8_t column=0;column<5;++column){
+    const uint8_t bits=pgm_read_byte(kFont+offset+column);
+    for(uint8_t sourceRow=0;sourceRow<7;++sourceRow){
+      if(!(bits&(1U<<sourceRow)))continue;
+      for(uint8_t dy=0;dy<rowHeight[sourceRow];++dy){
+        pixel(x+column,y+rowY[sourceRow]+dy);
+        pixel(x+column+1,y+rowY[sourceRow]+dy);
+      }
+    }
+  }
+}
+
+void PuckDisplay::textStatusCompact(int16_t x,int16_t y,const String& value) {
+  for(char ch:value){characterStatusCompact(x,y,ch);x+=7;}
+}
+
+int16_t PuckDisplay::textWidthStatusCompact(const String& value) const {
+  return value.length()?static_cast<int16_t>(value.length()*7-1):0;
 }
 
 void PuckDisplay::progress(int16_t x,int16_t y,int16_t w,int16_t h,uint8_t percent) { rect(x,y,w,h); int16_t fill=(w-4)*min(percent,(uint8_t)100)/100; if(fill>0)rect(x+2,y+2,fill,h-4,true); }

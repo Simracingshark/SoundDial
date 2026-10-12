@@ -35,7 +35,7 @@ void IRAM_ATTR EncoderInput::captureEncoderTransition() {
   else if (movement < 0 && pendingQuarterSteps_ > -120) --pendingQuarterSteps_;
 }
 
-InputEvent EncoderInput::update(bool reverse, bool acceleration) {
+InputEvent EncoderInput::update(bool reverse, bool acceleration, uint16_t mediumHoldMs) {
   const uint32_t now = millis();
   noInterrupts();
   const int16_t capturedQuarterSteps = pendingQuarterSteps_;
@@ -60,7 +60,13 @@ InputEvent EncoderInput::update(bool reverse, bool acceleration) {
   if(raw != stablePressed_ && now-rawChangedAt_ >= 25) {
     stablePressed_=raw;
     if(raw) { pressedAt_=now; longSent_=false; rotatedWhileHeld_=false; }
-    else if(!longSent_ && !rotatedWhileHeld_) { ++clickCount_; lastReleaseAt_=now; }
+    else if(!longSent_ && !rotatedWhileHeld_) {
+      const uint32_t heldFor=now-pressedAt_;
+      // A deliberate medium hold is reserved for Media seek mode.  It is
+      // emitted on release, so it cannot steal the existing 3 second hold.
+      if(heldFor>=mediumHoldMs){clickCount_=0;return {InputEventType::MediumPress,0};}
+      ++clickCount_;lastReleaseAt_=now;
+    }
     else if(rotatedWhileHeld_){rotatedWhileHeld_=false;return {InputEventType::HoldRelease,0};}
   }
   if(stablePressed_ && !longSent_ && !rotatedWhileHeld_ && now-pressedAt_ >= 3000) {

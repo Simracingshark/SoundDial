@@ -22,6 +22,12 @@ void DeviceSettings::load() {
   if(volumeStep!=1&&volumeStep!=2&&volumeStep!=4&&volumeStep!=5&&volumeStep!=10)volumeStep=4;
   trackPopupSeconds=p.getUChar("tracksec",5);
   if(trackPopupSeconds!=0&&trackPopupSeconds!=3&&trackPopupSeconds!=5&&trackPopupSeconds!=10)trackPopupSeconds=5;
+  seekStepSeconds=p.getUChar("seekstep",5);
+  if(seekStepSeconds!=5&&seekStepSeconds!=10&&seekStepSeconds!=15&&seekStepSeconds!=30)seekStepSeconds=5;
+  seekTimeoutSeconds=p.getUChar("seekexit",5);
+  if(seekTimeoutSeconds!=0&&seekTimeoutSeconds!=3&&seekTimeoutSeconds!=5&&seekTimeoutSeconds!=10)seekTimeoutSeconds=5;
+  seekHoldMs=p.getUShort("seekhold",1200);
+  if(seekHoldMs!=800&&seekHoldMs!=1200&&seekHoldMs!=1500&&seekHoldMs!=2000)seekHoldMs=1200;
   screenTimeoutSeconds = p.getUShort("timeout", 30);
   mediaTimeoutSeconds = p.getUShort("mediatime", 30);
   oledInverted = p.getBool("invert", false);
@@ -30,6 +36,15 @@ void DeviceSettings::load() {
   targetConfirm = p.getBool("targetok", true);
   automaticProfiles = p.getBool("autoprof", true);
   rainbowReverse = p.getBool("rain_rev", false);
+  batteryMonitor = p.getBool("battery", true);
+  batteryMinVoltage = p.getFloat("bat_min", 3.30f);
+  batteryMaxVoltage = p.getFloat("bat_max", 4.20f);
+  batteryDisplayMode = min(p.getUChar("bat_view", 2), static_cast<uint8_t>(2));
+  if(batteryMinVoltage<2.5f||batteryMinVoltage>3.9f||
+      batteryMaxVoltage<3.6f||batteryMaxVoltage>4.5f||
+      batteryMaxVoltage-batteryMinVoltage<0.3f){
+    batteryMinVoltage=3.30f;batteryMaxVoltage=4.20f;
+  }
   p.end();
 }
 
@@ -43,8 +58,12 @@ void DeviceSettings::save() const {
   p.putUChar("rain_spd", rainbowSpeed);p.putUChar("rain_w", rainbowSpread);
   p.putUChar("step", volumeStep);
   p.putUChar("tracksec", trackPopupSeconds);
+  p.putUChar("seekstep",seekStepSeconds);p.putUChar("seekexit",seekTimeoutSeconds);p.putUShort("seekhold",seekHoldMs);
   p.putUShort("timeout", screenTimeoutSeconds);p.putUShort("mediatime",mediaTimeoutSeconds);p.putBool("invert", oledInverted);
-  p.putBool("reverse", encoderReversed); p.putBool("accel", acceleration);p.putBool("targetok",targetConfirm);p.putBool("autoprof",automaticProfiles);p.putBool("rain_rev",rainbowReverse); p.end();
+  p.putBool("reverse", encoderReversed); p.putBool("accel", acceleration);p.putBool("targetok",targetConfirm);p.putBool("autoprof",automaticProfiles);p.putBool("rain_rev",rainbowReverse);
+  p.putBool("battery",batteryMonitor);
+  p.putFloat("bat_min",batteryMinVoltage);p.putFloat("bat_max",batteryMaxVoltage);
+  p.putUChar("bat_view",batteryDisplayMode);p.end();
 }
 
 void DeviceSettings::factoryReset() { Preferences p; p.begin("audiopuck", false); p.clear(); p.end(); }
