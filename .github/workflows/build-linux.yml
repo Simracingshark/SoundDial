@@ -1,0 +1,33 @@
+name: Build Linux host
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'linux-app/**'
+      - 'windows-app/Models.cs'
+      - 'windows-app/ConfigLoader.cs'
+      - 'windows-app/PuckProtocol.cs'
+      - 'windows-app/TransportContracts.cs'
+      - 'windows-app/NetworkTransport.cs'
+      - 'windows-app/TargetController.cs'
+      - 'windows-app/Log.cs'
+
+jobs:
+  linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test
+        run: dotnet run --project linux-app/SoundDial.Linux.csproj -- --self-test --config windows-app/config.example.toml
+      - name: Publish
+        run: dotnet publish linux-app/SoundDial.Linux.csproj -c Release -r linux-x64 --self-contained true -o linux-package
+      - name: Add docs and installer
+        run: cp linux-app/install.sh linux-app/README.md linux-package/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoundDial-Linux-x64
+          path: linux-package/
