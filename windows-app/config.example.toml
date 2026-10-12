@@ -1,0 +1,128 @@
+# ================================================================
+# SOUNDDIAL CONFIG
+# Save this file while SoundDial is running; it reloads automatically.
+# Application names are written without .exe.
+# Colors may be names or HEX values such as "#1DB954".
+# ================================================================
+
+[connection]
+# "auto" finds the ESP32 automatically. Use "COM12" only if needed.
+port = "auto"
+wifi = true
+token = "change-me"
+
+# ================================================================
+# MAIN MIXER
+# Rotate: volume. Click: mute. Hold and rotate: select a target.
+# The volume step is selected directly in the puck's SETTINGS menu.
+# A target listed in [steps] below overrides that global value.
+# Up to 16 targets may be listed in each profile.
+# ================================================================
+
+[mixer]
+sonar_gaming = "purple"
+spotify = "green"
+chrome = "red"
+sonar_media = "cyan"
+firefox = "orange"
+sonar_chat = "mint"
+master = "blue"
+current_app = "yellow"
+# Optional laptop-screen brightness target. It appears only when Windows
+# exposes a controllable built-in display and is hidden automatically on a
+# desktop PC. On the puck: hold the knob and rotate to select BRIGHTNESS,
+# release, then rotate normally to change brightness. Click does nothing.
+# Remove or comment this line if brightness control is not wanted.
+brightness = "yellow"
+
+[steps]
+# Personal fine control for SteelSeries Sonar Media.
+sonar_media = 1
+
+# ================================================================
+# MEDIA SCREEN
+# Double-click opens it. The timeout is selected on the puck:
+# 10 / 30 / 60 seconds or NEVER.
+# These are the volume targets available inside the media screen.
+# ================================================================
+
+[media]
+volume_targets = ["spotify", "chrome", "sonar_media"]
+# Only these applications may receive seek commands and provide the seek
+# timeline. Write process names without .exe. Keep Spotify out if a browser
+# must remain in control while Spotify is open in the background. If several
+# allowed sessions are equally active, the application listed first wins.
+seek_apps = ["firefox", "chrome", "msedge"]
+
+# ================================================================
+# OPTIONAL BATTERY METER
+# Requires two equal 220 kOhm resistors:
+# battery + -> 220k -> GPIO0 -> 220k -> GND.
+# min_voltage is shown as 0%; max_voltage is shown as 100%.
+# These are display calibration points, not cell protection limits.
+# Choose ONE dial display mode:
+#   display = "percent"  -> show a readable number, for example 83%
+#   display = "icon"     -> show a compact battery icon
+#   display = "off"      -> hide the dial battery from normal screens
+# The same choice is available in SoundDial PC > Device Settings and in the
+# puck's SETTINGS > BATTERY > DIAL BATTERY menu.
+# ================================================================
+
+[battery]
+min_voltage = 3.30
+max_voltage = 4.20
+display = "percent"
+
+# ================================================================
+# OPTIONAL LAPTOP STATUS
+# Laptop battery display on Main, Media AND Seek screens. Choose ONE:
+#   battery_display = "percent" -> L89% (L100 at a full charge)
+#   battery_display = "icon"    -> compact battery gauge marked L
+#   battery_display = "off"     -> hide the laptop battery
+# idle_dashboard is independent: it enables the optional clock/status page
+# after idle_after_seconds and does not change the battery display style.
+# Low/critical warnings are Windows notifications plus a puck message.
+# Battery source override:
+#   -2 = read the real Windows laptop battery automatically
+#   -1 = this is a desktop PC; never show a laptop battery
+# 0-100 = simulated percentage for display testing only
+# test_plugged_in = true shows the charging marker for a simulated battery.
+# ================================================================
+
+[host_status]
+battery_display = "off"
+idle_dashboard = false
+show_clock = true
+idle_after_seconds = 20
+low_battery_warning = true
+low_battery_percent = 20
+critical_battery_percent = 10
+repeat_warning_minutes = 30
+test_battery_percent = -2
+test_plugged_in = false
+
+# ================================================================
+# OPTIONAL VOICEMEETER MIXER PAGE
+# Select it through SETTINGS > PROFILE.
+# ================================================================
+
+[voicemeeter]
+vm_vaio = "pink"
+vm_b1 = "orange"
+
+# ================================================================
+# AUTOMATIC GAME PROFILE
+# trigger = "foreground" switches the profile when you Alt+Tab between
+# listed games and other windows. Use "running" to keep it active while
+# any listed game process exists. Add process names without .exe.
+# ================================================================
+
+[profile.gaming]
+name = "GAMING"
+trigger = "foreground"
+activate_when = ["cs2", "valorant-win64-shipping", "r5apex", "fortniteclient-win64-shipping"]
+game = "purple"
+sonar_gaming = "purple"
+discord = "cyan"
+spotify = "green"
+master = "blue"
