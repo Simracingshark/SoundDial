@@ -21,6 +21,15 @@ class PuckDisplay {
   void textMedium(int16_t x, int16_t y, const String& value);
   int16_t textWidthMedium(const String& value) const;
   void centeredMedium(int16_t y, const String& value);
+  void textMenu(int16_t x, int16_t y, const String& value);
+  int16_t textWidthMenu(const String& value) const;
+  void centeredMenu(int16_t y, const String& value);
+  void textCondensed(int16_t x, int16_t y, const String& value);
+  int16_t textWidthCondensed(const String& value) const;
+  void textStatus(int16_t x, int16_t y, const String& value);
+  int16_t textWidthStatus(const String& value) const;
+  void textStatusCompact(int16_t x, int16_t y, const String& value);
+  int16_t textWidthStatusCompact(const String& value) const;
   void progress(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t percent);
 
  private:
@@ -31,4 +40,8 @@ class PuckDisplay {
   void data(const uint8_t* bytes, size_t length);
   void character(int16_t x, int16_t y, char value, uint8_t scale);
   void characterMedium(int16_t x, int16_t y, char value);
+  void characterMenu(int16_t x, int16_t y, char value);
+  void characterCondensed(int16_t x, int16_t y, char value);
+  void characterStatus(int16_t x, int16_t y, char value);
+  void characterStatusCompact(int16_t x, int16_t y, char value);
 };

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "HardwareConfig.h"
 
-enum class InputEventType : uint8_t { None, Rotate, Click, DoubleClick, TripleClick, QuadrupleClick, LongPress, HoldRotate, HoldRelease };
+enum class InputEventType : uint8_t { None, Rotate, Click, DoubleClick, TripleClick, QuadrupleClick, MediumPress, LongPress, HoldRotate, HoldRelease };
 struct InputEvent {
   InputEventType type;
   int8_t delta;
@@ -14,7 +14,7 @@ struct InputEvent {
 class EncoderInput {
  public:
   void begin();
-  InputEvent update(bool reverse, bool acceleration);
+  InputEvent update(bool reverse, bool acceleration, uint16_t mediumHoldMs);
   bool pressed() const { return stablePressed_; }
 
  private:
